@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+	<head>
+		<link rel="stylesheet" href="index.css">
+		<meta charset="UTF-8">
+		<title>Truco</title>
+	</head>
+	<body>
+		<div id="textura"></div>
+<!-- historico de rodadas. -->
+		<div id="round">
+			<div id="quadro1">
+				<p id="rodada1" class="letra"> </p>
+			</div>
+			<div id="quadro2">
+				<p id="rodada2" class="letra"> </p>
+			</div>
+			<div id="quadro3">
+				<p id="rodada3" class="letra"> </p>
+			</div>
+		</div>
+<!-- marcador de pontos -->
+		<div id="placar1" class="plac">
+			<p id="player1">player: 11pts</p>
+		</div>
+		<div id="placar2" class="plac">
+			<p id="player2">CPU: 11pts</p>
+		</div>
+<!-- mão  do adversario. -->
+		<div id="adversario">
+				<div class="card" id="ac1">
+					<img src="baralho/11.png" alt="">
+				</div>
+				<div class="card" id="ac2">
+					<img src="baralho/11.png" alt="">
+				</div>
+				<div class="card" id="ac3">
+					<img src="baralho/11.png" alt="">
+				</div>
+		</div>
+<!-- centro  da mesa. -->
+		<div id="played">
+			<div id="baralho" class="card">
+				<img src="baralho/0.png">
+			</div>
+			
+			<div id="vira">
+				<img src="baralho/1.png" alt="">
+			</div>
+
+			<div id="estado">
+				<div id="inPlay3">
+					
+				</div>
+				<div id="inPlay2">
+					
+				</div>
+				<div id="inPlay1">
+					
+				</div>
+			</div>
+		</div>
+
+<!-- Mão do jogador -->
+		<div id="player">
+			<div id="posi1">
+				<div id="esc1" class="escbt">
+					<button class="btp1" id="draw0" onclick="jogo.game(0);">Jogar</button>
+					<button class="btp2" id="fora0" onclick="jogo.game(-1);">Discartar</button>
+				</div>
+				<div class="card" id="pc1">
+					<img src="baralho/11.png" alt="">
+				</div>
+			</div>	
+			
+			<div id="posi2">
+				<div id="esc2" class="escbt">
+					<button class="btp1" id="draw1" onclick="jogo.game(1);">Jogar</button>
+					<button class="btp2" id="fora1" onclick="jogo.game(-1);">Discartar</button>
+				</div>
+				<div class="card" id="pc2">
+					<img src="baralho/11.png" alt="">
+				</div>
+			</div>
+			
+			<div id="posi3">
+				<div id="esc3" class="escbt">
+					<button class="btp1" id="draw2" onclick="jogo.game(2);">Jogar</button>
+					<button class="btp2" id="fora2" onclick="jogo.game(-1);">Discartar</button>
+				</div>
+				<div class="card" id="pc3">
+					<img src="baralho/11.png" alt="">
+				</div>
+			</div>
+		</div>
+
+		<div id="chose">
+			<button id="truco" class="chbt" onclick="jogo.truco(1);">TRUCO!</button>	
+			<button class="chbt" onclick="jogo.win(0,jogo.pontosTruco)">Encerrar</button>
+		</div>
+</body>
+
+<script>
+	var baralho = {
+		card: [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
+		// função embaralhamneto das cartas.
+		embaralhar: function(){
+			do{
+				this.card[0]= Math.floor(Math.random()*100);
+			}while(this.card[0]>40 || this.card[0]<1);
+
+			var teste=0;
+			for(i=1; i<40; i++){
+				while(teste==0){
+					do{
+						this.card[i]= Math.floor(Math.random()*100);
+					}while(this.card[i]>40 || this.card[i]<1);
+
+					teste=1;
+
+					for(inter=0; inter<i; inter++){
+						if(this.card[i]==this.card[inter]){
+							teste=0;
+						}
+					}
+				}
+				teste=0;
+			}
+
+			console.log(this.card);
+		}
+	}
+
+// Função de puxar cartas.
+
+	var players ={
+		winPlayer: 0,
+		winCpu: 0,
+		handCardsPlayer: [-1, -1, -1],
+		handCardsCpu: [-1, -1, -1],
+		vira: -1,
+		emjogo: [-1,-1,-1],
+
+// Função que faz coloca as cartas na mão.
+		drawCards: function(){
+			for(i=0; i<3; i++){
+				this.handCardsPlayer[i] = baralho.card[i+3];
+				this.handCardsCpu[i] = baralho.card[i];
+			}
+			this.vira = baralho.card[6];
+		},
+
+// Função que faz as cartas aparecerem na mão.
+		drawHands: function(){
+			// Algoritmo que faz as cartas aparecerem visualente na mão do jogador.
+			for(i=1; i<=3; i++){
+				if(this.handCardsPlayer[i-1]>0){
+					document.getElementById('pc'+i).innerHTML = '<img src="baralho/'+this.handCardsPlayer[i-1]+'.png">';
+				}else{
+					document.getElementById('pc'+i).innerHTML = '';
+					document.getElementById('esc'+i).style.display = 'none';
+					document.getElementById('pc'+i).style = 'margin-top: 46px;';
+				}
+			}
+
+			// Algoritmo que faz as cartas aparecerem visualmente na mão do CPU.
+
+			for(i=1; i<=3; i++){
+				if(this.handCardsCpu[i-1]>0){
+					document.getElementById('ac'+i).innerHTML = '<img src="baralho/'+0+'.png">';
+				}else{
+					document.getElementById('ac'+i).innerHTML = '';
+				}
+			}
+
+			// algoritmo que coloca a carta no vira.
+
+			document.getElementById('vira').innerHTML = '<img src="baralho/'+this.vira+'.png">';
+
+			// algoritmo que coloca as cartas em jogo.
+			for(i=1; i<=3; i++){
+				if(this.emjogo[i-1]>0){
+					document.getElementById('inPlay'+i).innerHTML = '<img src="baralho/'+this.emjogo[i-1]+'.png">';
+				}else{
+					document.getElementById('inPlay'+i).innerHTML = '';
+				}
+			}
+
+			//  algoritmo que vai mostrar o placar da rodada.
+			for(i=1; i<=3; i++){
+				switch(jogo.histWin[i-1]){
+					case -1:
+						document.getElementById('rodada'+i).innerHTML = ' ';
+					break;
+					case 0:
+						document.getElementById('rodada'+i).innerHTML = 'C';
+					break;
+					case 1:
+						document.getElementById('rodada'+i).innerHTML = 'P';
+					break;
+				}
+			}
+
+			// algoritmo que mostra os pontos na tela.
+			document.getElementById('player1').innerHTML = 'Player: '+this.winPlayer+' 	pts';
+			document.getElementById('player2').innerHTML = 'CPU: '+this.winCpu+' pts';
+
+		},
+
+	}
+// funções da IA.
+	var cpu ={
+		// função de  jogada basica.
+		lvl1: function(inicial,final){
+			var chose;
+
+			do{
+				do{
+					chose = Math.floor(Math.random()*10);
+				}while(chose<inicial  || chose>final);
+			}while(players.handCardsCpu[chose] == -1);
+
+			return chose;
+		},
+
+		// função que confirma o truco.
+		trucada: function(){
+			var chose = this.lvl1(0,10);
+
+			if(chose==0)
+				chose=2;
+			else if(chose<5)
+				chose=1;
+			else
+				chose=0;
+
+			return chose;
+		},
+
+		// função que ativa todas as funções da ia.
+		ia: function(){
+			var jogada = this.lvl1(0,2);
+
+			return jogada;
+		},
+	}
+
+// funções do jogo
+	var jogo = {
+		winner: -1,
+		histWin: [-1,-1,-1],
+		round: 1,
+		iaPlayed:[-1,-1,-1],
+		pontosTruco: 1,
+
+		game: function(card){
+			document.getElementById('truco').style = 'opacity: 1;';
+			document.getElementById('truco').setAttribute('onclick','jogo.truco(1);');
+
+			if(this.iaPlayed[2] == 0){
+				this.mid(card,jogada,0);
+
+				this.maior(players.handCardsPlayer[card], this.iaPlayed[2], card, jogada);
+			}
+			else{
+				console.log("player começa");
+				var jogada = cpu.ia();
+
+				this.mid(card,jogada,0);
+
+				this.maior(players.handCardsPlayer[card], players.handCardsCpu[jogada], card, jogada);
+			}
+		},
+// atualizar o meio.
+		mid: function(card, jogada,teste){
+			if(teste == 1 || teste == 0){
+				players.emjogo[2] = players.emjogo[1];
+				players.emjogo[1] = players.emjogo[0];
+				players.emjogo[0] = players.handCardsPlayer[card];
+				players.drawHands();
+			}
+			if(teste == 2 || teste == 0){ 
+				players.emjogo[2] = players.emjogo[1];
+				players.emjogo[1] = players.emjogo[0];
+				players.emjogo[0] = players.handCardsCpu[jogada];
+				players.drawHands();
+			}
+
+		},
+
+//função que da força a carta.
+		forca: function(valor){
+			var final;
+			if(valor>0 && valor<5){ final = 1;}
+			else if(valor<9){ final = 2;}
+			else if(valor<13){ final = 3;}
+			else if(valor<17){ final = 4;}
+			else if(valor<21){ final = 5;}
+			else if(valor<25){ final = 6;}
+			else if(valor<29){ final = 7;}
+			else if(valor<33){ final = 8;}
+			else if(valor<37){ final = 9;}
+			else{ final = 10;}
+
+			return final;
+		},
+
+// função que vai decidir o vencedor e guirar o jogo.
+		maior: function(valor1, valor2, card, ia){
+			var vFinal1= [-1, -1] , vFinal2= [-1, -1];
+			var winner = -1;
+
+// algoritmo que da o nivel de força da carta.
+			vFinal1[0] = this.forca(valor1);
+			vFinal2[0] = this.forca(valor2);
+			fVira = this.forca(players.vira)+1;
+			if(fVira == 11){fVira = 1}
+			console.log("carta:"+valor1+"--"+valor2)
+			console.log("força: "+vFinal1+"--"+vFinal2);
+
+//onde o a carta mais forte escolhida.
+			
+			// caso de o vira.
+			if (fVira == vFinal1[0] || fVira == vFinal2[0]) {
+
+				if (fVira == vFinal1[0] && vFinal1[0]!=vFinal2[0]) { winner = 1;}
+				else if(fVira == vFinal2[0] && vFinal2[0]!=vFinal1[0]){ winner = 0;}
+				else if(vFinal1[0] == vFinal2[0])
+				{
+					vFinal1[1] = this.secondV(valor1);
+					vFinal2[1] = this.secondV(valor2);
+
+					if(vFinal1[1]>vFinal2[1]){winner = 1}
+					else{winner = 0}
+				}
+			}
+			//alritmos de vitoria normal
+			else if(vFinal1[0] > vFinal2[0]){ winner=1}
+			else if(vFinal1[0] < vFinal2[0]){ winner=0}
+			else if(vFinal1[0] == vFinal2[0])
+			{
+				//função de empate normal.
+				console.log('empate normal');
+				alert("empate");
+
+				if(this.round == 1)
+				{
+					alert(" Escolha sua carta");
+					for(i=0; i<3; i++){
+						document.getElementById('draw'+i).setAttribute('onclick','jogo.draw('+i+');');
+					}
+				}
+				else
+				{
+					if(this.histWin[0]==1){ winner = 1}
+					else{ winner = 0}
+				}
+			}
+			
+			this.winner = winner;
+			var teste = 0;
+			if(this.round == 3){ this.win(winner,this.pontosTruco)}
+			else if(this.round == 2 && winner == 1 && this.histWin[0] == 1){this.win(winner,this.pontosTruco);}
+			else if(this.round == 2 && winner == 0 && this.histWin[0] == 0){this.win(winner,this.pontosTruco);}
+			else{
+				this.round +=1;
+				players.handCardsPlayer[card]= -1;
+				players.handCardsCpu[ia]= -1;
+				this.histWin[this.round-2] = winner;
+				console.log(this.histWin+"vencedor:"+winner);
+				this.iaPlayed[2] = 1;
+
+				if(winner == 0){
+					this.iaPlayed[0] = cpu.ia();
+					this.iaPlayed[1] = round-2;
+					this.iaPlayed[2] = 0;
+
+					this.mid(0,this.iaPlayed[0],2);
+					players.handCardsCpu[this.iaPlayed[0]] = -1;
+					players.drawHands();
+					console.log("cpu começa");
+				}
+			}
+			
+			players.drawHands();
+			console.log('cartas player: '+players.handCardsPlayer);
+		},
+
+		// valor secundario das cartas
+		secondV: function(valor){
+			var result;
+			if(valor<5){
+				switch(valor){
+					case 1:
+						result = 1;
+					break;
+					case 2:
+						result = 2;
+					break;
+					case 3:
+						result = 3;
+					break;
+					case 4:
+						result = 4;
+					break;
+				}
+			}
+			else
+			{
+				if(valor%4==0){ result = (valor%4)*4+1;}
+				else{result = (valor%4)*4+1;}
+			}
+			return result;
+		},
+
+		// função de empate.
+		draw: function(card){
+
+			var vFinal1= this.forca(players.handCardsPlayer[card]);
+			var vFinal2= this.forca(players.handCardsCpu[cpu.ia()]);
+
+			players.handCardsPlayer[card]= -1;
+
+			if(vFinal1 > vFinal2){
+				this.winner = 1;
+				this.win(1,this.pontosTruco);
+			}
+			else if(vFinal2 > vFinal1){
+				this.winner = 0;
+				this.win(0,pontosTruco);
+			}
+
+			players.drawHands();
+		},
+
+		// função de vitoria.
+		win: function(vencedor,pontos){
+			console.clear();
+			console.log('função de vitoria ativada.');
+
+			//algoritmo que mostra o vencedor.
+			if(vencedor == 1){
+				players.winPlayer += pontos;
+				alert('O Jogador ganho a rodada.')
+			}
+			else if(vencedor == 0){
+				players.winCpu += pontos;
+				alert('O CPU ganho a rodada.');
+			}
+
+			// algoritmo que faz os menus e css voltarem.
+			for(i=1; i<=3; i++){
+				document.getElementById('esc'+i).style = '';
+				document.getElementById('pc'+i).style = '';
+				document.getElementById('draw'+(i-1)).setAttribute('onclick','jogo.game('+(i-1)+');');
+			}
+
+
+			players.emjogo = [-1,-1,-1];
+
+			// limpando as imformações.
+			this.winner = -1;
+			this.histWin = [-1,-1,-1];
+			this.round = 1;
+			this.iaPlayed = [-1,-1];
+			this.pontosTruco = 1;
+
+			run();
+		},
+
+		//função de dar truco.
+		truco: function(jogador){
+			console.log('Função truco ativada.')
+
+			//algoritmo que arruma os pontos.
+			if(this.pontosTruco ==1)
+				var valorTruco = (this.pontosTruco-1)+3;
+			else
+				var valorTruco = this.pontosTruco+3;
+
+			//algoritmo que filtra a escolha.
+			if(jogador == 1){
+				var CpuChose = cpu.trucada();
+
+				if(CpuChose==1){
+					this.pontosTruco= valorTruco;
+					document.getElementById('truco').setAttribute('onclick','');
+					document.getElementById('truco').style = 'opacity: .3;';
+				}
+				else if(CpuChose==0){
+					this.win(1,this.pontosTruco);
+				}
+				else if(CpuChose==2){
+					//algoritmo que aumenta o truco~(6-9-12).
+					var playerChose = confirm("Deseja aceita o "+(valorTruco+3)+"?");
+
+					if(playerChose == true){
+
+					}
+					else{
+						this.win(0, this.pontosTruco);
+					}
+				}
+			}
+			else{
+
+			}
+
+			console.log('chose cpu: '+CpuChose);
+
+		},
+
+	}
+
+// Função que roda todas as funções
+	function run(){
+		baralho.embaralhar();
+		players.drawCards();
+
+		//players.handCardsPlayer[0] = 3;
+		//players.handCardsCpu = [1,2,4];
+
+		players.drawHands();
+
+	}
+
+	run();
+</script>
+
+</html>
